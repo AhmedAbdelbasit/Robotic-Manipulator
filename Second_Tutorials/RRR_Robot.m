@@ -22,7 +22,7 @@ function varargout = RRR_Robot(varargin)
 
 % Edit the above text to modify the response to help RRR_Robot
 
-% Last Modified by GUIDE v2.5 28-Nov-2017 15:22:06
+% Last Modified by GUIDE v2.5 06-Nov-2017 21:50:49
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,38 +54,9 @@ function RRR_Robot_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for RRR_Robot
 handles.output = hObject;
-L_1 = 20;
-L_2 = 50;
-L_3 = 40;
 
-L (1) = Link([0 L_1 0 pi/2]);
-L (2) = Link([0 0 L_2 0]);
-L (3) = Link([0 0 L_3 0]);
-L(3).offset = -pi/2;
-
-Robot = SerialLink(L);
-Robot.name = 'RRR_Robot';
-
-handles.Theta_1.String = '90';
-handles.Theta_2.String = '90';
-handles.Theta_3.String = '90';
-
-J = Robot.fkine([ pi/2 pi/2 pi/2]);
-
-handles.CurrentT1 = pi/2;
-handles.CurrentT2 = pi/2;
-handles.CurrentT3 = pi/2;
-
-handles.Pos_X.String = num2str(floor(J(1,4)));
-handles.Pos_Y.String = num2str(floor(J(2,4)));
-handles.Pos_Z.String = num2str(floor(J(3,4)));
-
-Robot.plot([pi/2 pi/2 pi/2]);
-view(45,30);
-handles.Robot = Robot;
 % Update handles structure
 guidata(hObject, handles);
-
 
 % UIWAIT makes RRR_Robot wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
@@ -123,6 +94,7 @@ function Theta_1_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
 
 
 function Theta_2_Callback(hObject, eventdata, handles)
@@ -179,14 +151,19 @@ Th_1 = str2double(handles.Theta_1.String)*pi/180;
 Th_2 = str2double(handles.Theta_2.String)*pi/180;
 Th_3 = str2double(handles.Theta_3.String)*pi/180;
 
-%cla(handles.axes1);
-handles.Robot.plot([Th_1 Th_2 Th_3]);
+L_1 = 20;
+L_2 = 50;
+L_3 = 40;
 
-T = handles.Robot.fkine([Th_1 Th_2 Th_3]);
-handles.CurrentT1 = Th_1;
-handles.CurrentT2 = Th_2;
-handles.CurrentT3 = Th_3;
+L(1) = Link([0 L_1 0 pi/2]);
+L(2) = Link([0 0 L_2 0]);
+L(3) = Link([0 0 L_3 0]);
 
+Robot = SerialLink(L);
+Robot.name = 'RRR_Robot';
+Robot.plot([Th_1 Th_2 Th_3]);
+
+T = Robot.fkine([Th_1 Th_2 Th_3]);
 handles.Pos_X.String = num2str(floor(T(1,4)));
 handles.Pos_Y.String = num2str(floor(T(2,4)));
 handles.Pos_Z.String = num2str(floor(T(3,4)));
@@ -268,92 +245,26 @@ PX = str2double(handles.Pos_X.String);
 PY = str2double(handles.Pos_Y.String);
 PZ = str2double(handles.Pos_Z.String);
 
+L_1 = 20;
+L_2 = 50;
+L_3 = 40;
+
+L(1) = Link([0 L_1 0 pi/2]);
+L(2) = Link([0 0 L_2 0]);
+L(3) = Link([0 0 L_3 0]);
+
+Robot = SerialLink(L);
+Robot.name = 'RRR_Robot';
+
 T = [ 1 0 0 PX;
       0 1 0 PY;
       0 0 1 PZ;
       0 0 0 1];
   
-J = handles.Robot.ikine(T, [0 handles.CurrentT2 handles.CurrentT3], [1 1 1 0 0 0]) * 180/pi;
+J = Robot.ikine(T, [0 0 0], [1 1 1 0 0 0]) * 180/pi;
 handles.Theta_1.String = num2str(floor(J(1)));
 handles.Theta_2.String = num2str(floor(J(2)));
 handles.Theta_3.String = num2str(floor(J(3)));
 
-%cla(handles.axes1);
-handles.Robot.plot(J*pi/180);
+Robot.plot(J*pi/180);
 
-
-% --- Executes on button press in btnDemo.
-function btnDemo_Callback(hObject, eventdata, handles)
-% hObject    handle to btnDemo (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-State = 0;
-x = handles.txtStep.String;
-if( strcmp(x, '') )
-    Step = 10;
-else
-    Step = str2double(x);
-end
-Start = 0;
-End = 180;
-%PauseTime = 0;
-
-cla(handles.axes1);
-handles.Robot.plot([0 pi/2 pi/2]);
-view(45,30);
-hold on;
-
-t_1 = Start:Step:End;
-Points = zeros(length(t_1), length(t_1) , 3);
-
-
-for t1 = 1:1:length(t_1)
-    if (State == 0)
-        for t2 = 1:1:length(t_1)
-            % handles.Robot.plot([0 t1 t2]*pi/180);
-            P = handles.Robot.fkine([0 t_1(t1) t_1(t2)]*pi/180);
-            Points(t1,t2,1) = P(1,4);
-            Points(t1,t2,2) = P(2,4);
-            Points(t1,t2,3) = P(3,4);
-            % plot3(P(1,4),P(2,4),P(3,4),'r*');
-            % pause(PauseTime);
-        end
-        State = 1;
-    else
-        for t2 = length(t_1):-1:1
-            % handles.Robot.plot([0 t1 t2]*pi/180);
-            P = handles.Robot.fkine([0 t_1(t1) t_1(t2)]*pi/180);
-            Points(t1,t2,1) = P(1,4);
-            Points(t1,t2,2) = P(2,4);
-            Points(t1,t2,3) = P(3,4);
-            % plot3(P(1,4),P(2,4),P(3,4),'r*');
-            % pause(PauseTime);
-        end
-        State = 0;
-    end
-end
-
-plot3(Points(:,:,1), Points(:,:,2), Points(:,:,3), 'r.');
-
-
-
-function txtStep_Callback(hObject, eventdata, handles)
-% hObject    handle to txtStep (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of txtStep as text
-%        str2double(get(hObject,'String')) returns contents of txtStep as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function txtStep_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to txtStep (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
